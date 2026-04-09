@@ -856,8 +856,8 @@ function FallingPetals() {
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    const W = canvas.offsetWidth || 800;
-    const H = canvas.offsetHeight || 600;
+    const W = canvas.offsetWidth || window.innerWidth;
+    const H = canvas.offsetHeight || window.innerHeight;
     canvas.width = W;
     canvas.height = H;
     const ctx = canvas.getContext("2d");
@@ -985,15 +985,13 @@ export default function KirschbluteDeutschland() {
 
   function toggleSpot(spot) {
     const mobile = window.innerWidth < 768;
-    setSelectedSpot(prev => {
-      const isDeselecting = prev?.id === spot.id;
-      if (!isDeselecting && spot.status === "peak") {
-        setPetalId(Date.now());
-      } else {
-        setPetalId(null);
-      }
-      return isDeselecting ? null : spot;
-    });
+    const isDeselecting = selectedSpot?.id === spot.id;
+    setSelectedSpot(isDeselecting ? null : spot);
+    if (!isDeselecting && spot.status === "peak") {
+      setPetalId(Date.now());
+    } else {
+      setPetalId(null);
+    }
     if (mobile) setShowPanel(false);
   }
 
