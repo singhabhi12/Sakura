@@ -962,6 +962,38 @@ export default function KirschbluteDeutschland() {
   const [isMobile, setIsMobile] = useState(() => window.innerWidth < 768);
   const [showPanel, setShowPanel] = useState(() => window.innerWidth >= 768);
   const [sheetSnap, setSheetSnap] = useState("peek"); // "peek" | "full" — mobile only
+  const sheetRef = useRef(null);
+  const touchStartY = useRef(null);
+  const PEEK_H = 240;
+
+  function onHandleTouchStart(e) {
+    touchStartY.current = e.touches[0].clientY;
+    if (sheetRef.current) sheetRef.current.style.transition = "none";
+  }
+
+  function onHandleTouchMove(e) {
+    if (touchStartY.current === null) return;
+    const delta = e.touches[0].clientY - touchStartY.current;
+    const baseH = sheetSnap === "full" ? window.innerHeight * 0.88 : PEEK_H;
+    const newH = Math.max(100, Math.min(window.innerHeight * 0.92, baseH - delta));
+    if (sheetRef.current) sheetRef.current.style.height = newH + "px";
+  }
+
+  function onHandleTouchEnd(e) {
+    if (touchStartY.current === null) return;
+    const delta = e.changedTouches[0].clientY - touchStartY.current;
+    touchStartY.current = null;
+    if (sheetRef.current) sheetRef.current.style.transition = "height 0.32s cubic-bezier(0.32, 0.72, 0, 1)";
+    if (delta < -60) {
+      setSheetSnap("full");
+      if (sheetRef.current) sheetRef.current.style.height = "88vh";
+    } else if (delta > 60) {
+      setSheetSnap("peek");
+      if (sheetRef.current) sheetRef.current.style.height = PEEK_H + "px";
+    } else {
+      if (sheetRef.current) sheetRef.current.style.height = sheetSnap === "full" ? "88vh" : PEEK_H + "px";
+    }
+  }
 
   useEffect(() => {
     const onResize = () => {
@@ -1141,30 +1173,31 @@ export default function KirschbluteDeutschland() {
 
       {/* ── MOBILE: Apple Maps-style bottom sheet ── */}
       {isMobile && (
-        <div style={{
+        <div ref={sheetRef} style={{
           position: "fixed", bottom: 0, left: 0, right: 0,
           zIndex: 1100,
           background: "#F5F4EF",
           borderRadius: "22px 22px 0 0",
           boxShadow: "0 -4px 32px rgba(0,0,0,0.14)",
-          height: sheetSnap === "full" ? "88vh" : "240px",
+          height: sheetSnap === "full" ? "88vh" : PEEK_H + "px",
           transition: "height 0.32s cubic-bezier(0.32, 0.72, 0, 1)",
           display: "flex", flexDirection: "column",
           overflow: "hidden",
         }}>
 
-          {/* Drag handle — tapping toggles peek ↔ full */}
-          <button
-            onClick={() => setSheetSnap(s => s === "peek" ? "full" : "peek")}
+          {/* Drag handle */}
+          <div
+            onTouchStart={onHandleTouchStart}
+            onTouchMove={onHandleTouchMove}
+            onTouchEnd={onHandleTouchEnd}
             style={{
               width: "100%", padding: "14px 0 10px", flexShrink: 0,
               display: "flex", alignItems: "center", justifyContent: "center",
-              background: "none", border: "none", cursor: "pointer",
-              touchAction: "manipulation", WebkitTapHighlightColor: "transparent",
+              touchAction: "none", userSelect: "none", cursor: "grab",
             }}
           >
             <div style={{ width: 44, height: 5, borderRadius: 3, background: "#C8C4BC" }} />
-          </button>
+          </div>
 
           {/* Music player card — inline, full width */}
           <MusicPlayer inline />
