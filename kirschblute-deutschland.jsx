@@ -1154,12 +1154,17 @@ export default function KirschbluteDeutschland() {
         }}>
 
           {/* Drag handle — tapping toggles peek ↔ full */}
-          <div
+          <button
             onClick={() => setSheetSnap(s => s === "peek" ? "full" : "peek")}
-            style={{ padding: "12px 0 6px", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}
+            style={{
+              width: "100%", padding: "14px 0 10px", flexShrink: 0,
+              display: "flex", alignItems: "center", justifyContent: "center",
+              background: "none", border: "none", cursor: "pointer",
+              touchAction: "manipulation", WebkitTapHighlightColor: "transparent",
+            }}
           >
-            <div style={{ width: 38, height: 4, borderRadius: 2, background: "#D0CDC6" }} />
-          </div>
+            <div style={{ width: 44, height: 5, borderRadius: 3, background: "#C8C4BC" }} />
+          </button>
 
           {/* Music player card — inline, full width */}
           <MusicPlayer inline />
