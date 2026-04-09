@@ -1051,48 +1051,53 @@ export default function KirschbluteDeutschland() {
       }}>
 
         {/* Header */}
-        <div style={{ padding: "28px 24px 0", position: "relative" }}>
-          <div style={{
-            fontFamily: "'Playfair Display', Georgia, serif",
-            fontSize: 24, fontWeight: 600, color: "#1A1A1A", lineHeight: 1.2, marginBottom: 6,
-          }}>
-            {t.title[0]}<br />{t.title[1]}
+        <div style={{ padding: "24px 24px 0" }}>
+          {/* Title row + controls */}
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12, marginBottom: 6 }}>
+            <div style={{
+              fontFamily: "'Playfair Display', Georgia, serif",
+              fontSize: 24, fontWeight: 600, color: "#1A1A1A", lineHeight: 1.2, flex: 1, minWidth: 0,
+            }}>
+              {t.title[0]}<br />{t.title[1]}
+            </div>
+            {/* Lang toggle + mobile close stacked on the right */}
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 8, flexShrink: 0 }}>
+              <div style={{ display: "flex", background: "#EBE9E3", borderRadius: 8, padding: 2 }}>
+                {["de", "en"].map(l => (
+                  <button
+                    key={l}
+                    onClick={() => setLang(l)}
+                    style={{
+                      padding: "5px 10px", borderRadius: 6,
+                      fontSize: 11, fontWeight: 700, letterSpacing: 0.5,
+                      border: "none", cursor: "pointer", transition: "all 0.15s",
+                      background: lang === l ? "white" : "transparent",
+                      color: lang === l ? "#1A1A1A" : "#AAA",
+                      boxShadow: lang === l ? "0 1px 3px rgba(0,0,0,0.1)" : "none",
+                      textTransform: "uppercase",
+                    }}
+                  >
+                    {l}
+                  </button>
+                ))}
+              </div>
+              {isMobile && (
+                <button
+                  onClick={() => setShowPanel(false)}
+                  style={{
+                    padding: "6px 14px", borderRadius: 100, border: "1px solid #E0DDCF",
+                    background: "white", cursor: "pointer", fontSize: 11,
+                    fontWeight: 600, color: "#888", letterSpacing: 0.3,
+                  }}
+                >
+                  ✕ Close
+                </button>
+              )}
+            </div>
           </div>
           <div style={{ fontSize: 12, color: "#AAA", lineHeight: 1.5, marginBottom: 20 }}>
             {t.subtitle(SPOTS.length)}
           </div>
-
-          {/* Top-right controls: lang toggle + mobile close */}
-          <div style={{ position: "absolute", top: 28, right: 24, display: "flex", alignItems: "center", gap: 8 }}>
-          {isMobile && (
-            <button onClick={() => setShowPanel(false)} style={{
-              width: 28, height: 28, borderRadius: "50%", border: "1px solid #E0DDCF",
-              background: "white", cursor: "pointer", fontSize: 14, color: "#888",
-              display: "flex", alignItems: "center", justifyContent: "center",
-            }}>✕</button>
-          )}
-          <div style={{
-            display: "flex", background: "#EBE9E3", borderRadius: 8, padding: 2,
-          }}>
-            {["de", "en"].map(l => (
-              <button
-                key={l}
-                onClick={() => setLang(l)}
-                style={{
-                  padding: "5px 10px", borderRadius: 6,
-                  fontSize: 11, fontWeight: 700, letterSpacing: 0.5,
-                  border: "none", cursor: "pointer", transition: "all 0.15s",
-                  background: lang === l ? "white" : "transparent",
-                  color: lang === l ? "#1A1A1A" : "#AAA",
-                  boxShadow: lang === l ? "0 1px 3px rgba(0,0,0,0.1)" : "none",
-                  textTransform: "uppercase",
-                }}
-              >
-                {l}
-              </button>
-            ))}
-          </div>
-          </div>{/* end top-right controls */}
 
           {/* Tabs */}
           <div style={{
