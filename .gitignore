@@ -1,0 +1,7 @@
+node_modules
+dist
+.DS_Store
+*.local
+Lofi Chill*
+public/*.mp3
+public/*.m4a
