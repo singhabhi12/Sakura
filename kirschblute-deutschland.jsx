@@ -646,14 +646,14 @@ function SpotDetail({ spot, lang, onClose, isMobile }) {
 }
 
 // Music player — streams via YouTube IFrame API (video ID: IUxgb_qinNE)
-function MusicPlayer() {
+function MusicPlayer({ inline = false }) {
   const playerRef = useRef(null);
   const playerId = useRef("yt-" + Math.random().toString(36).slice(2, 8));
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [volume, setVolume] = useState(18);
-  const [isCollapsed, setIsCollapsed] = useState(() => window.innerWidth < 768);
+  const [isCollapsed, setIsCollapsed] = useState(true);
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
@@ -735,12 +735,19 @@ function MusicPlayer() {
 
   return (
     <div style={{
-      position: "absolute", top: 16, right: 16, zIndex: 900,
-      width: window.innerWidth < 768 ? "calc(100% - 32px)" : 310,
-      maxWidth: 310,
-      borderRadius: 16,
-      background: "#F5F4EF", border: "1px solid #E8E5DC",
-      boxShadow: "0 4px 28px rgba(0,0,0,0.10)",
+      ...(inline ? {
+        margin: "0 12px 10px",
+        borderRadius: 14,
+        border: "1px solid #E0DDCF",
+        boxShadow: "0 2px 12px rgba(0,0,0,0.06)",
+      } : {
+        position: "absolute", top: 16, right: 16, zIndex: 900,
+        width: 310, maxWidth: 310,
+        borderRadius: 16,
+        boxShadow: "0 4px 28px rgba(0,0,0,0.10)",
+        border: "1px solid #E8E5DC",
+      }),
+      background: "#F5F4EF",
       fontFamily: "'DM Sans', sans-serif",
       overflow: "hidden",
     }}>
@@ -954,6 +961,7 @@ export default function KirschbluteDeutschland() {
   const [search, setSearch] = useState("");
   const [isMobile, setIsMobile] = useState(() => window.innerWidth < 768);
   const [showPanel, setShowPanel] = useState(() => window.innerWidth >= 768);
+  const [sheetSnap, setSheetSnap] = useState("peek"); // "peek" | "full" — mobile only
 
   useEffect(() => {
     const onResize = () => {
@@ -984,7 +992,6 @@ export default function KirschbluteDeutschland() {
   const gemCount = SPOTS.filter(s => s.gem).length;
 
   function toggleSpot(spot) {
-    const mobile = window.innerWidth < 768;
     const isDeselecting = selectedSpot?.id === spot.id;
     setSelectedSpot(isDeselecting ? null : spot);
     if (!isDeselecting && spot.status === "peak") {
@@ -992,7 +999,10 @@ export default function KirschbluteDeutschland() {
     } else {
       setPetalId(null);
     }
-    if (mobile) setShowPanel(false);
+    if (window.innerWidth < 768) {
+      // Collapse sheet so SpotDetail overlay has room
+      setSheetSnap("peek");
+    }
   }
 
   return (
@@ -1022,236 +1032,226 @@ export default function KirschbluteDeutschland() {
         }
         .filter-chip:hover { border-color: #B0ADA5; }
         .filter-chip.active { background: #1A1A1A; border-color: #1A1A1A; color: white; }
-        @keyframes slideUpPanel {
-          from { transform: translateY(100%); }
-          to   { transform: translateY(0); }
-        }
         @media (max-width: 767px) {
-          .leaflet-control-zoom { bottom: 90px !important; right: 12px !important; }
+          .leaflet-control-zoom { bottom: 280px !important; right: 12px !important; }
         }
       `}</style>
 
-      {/* LEFT PANEL */}
-      {(showPanel) && (
-      <div style={{
-        width: isMobile ? "100%" : 370,
-        flexShrink: 0,
-        display: "flex",
-        flexDirection: "column",
-        background: "#F5F4EF",
-        borderRight: isMobile ? "none" : "1px solid #E8E5DC",
-        height: "100%",
-        ...(isMobile ? {
-          position: "fixed", top: 0, left: 0, right: 0, bottom: 0,
-          zIndex: 1100,
-          animation: "slideUpPanel 0.28s ease-out",
-        } : {}),
-      }}>
-
-        {/* Header */}
-        <div style={{ padding: "24px 24px 0" }}>
-          {/* Title row + controls */}
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12, marginBottom: 6 }}>
-            <div style={{
-              fontFamily: "'Playfair Display', Georgia, serif",
-              fontSize: 24, fontWeight: 600, color: "#1A1A1A", lineHeight: 1.2, flex: 1, minWidth: 0,
-            }}>
-              {t.title[0]}<br />{t.title[1]}
-            </div>
-            {/* Lang toggle + mobile close stacked on the right */}
-            <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 8, flexShrink: 0 }}>
-              <div style={{ display: "flex", background: "#EBE9E3", borderRadius: 8, padding: 2 }}>
+      {/* ── DESKTOP: side panel ── */}
+      {!isMobile && showPanel && (
+        <div style={{
+          width: 370, flexShrink: 0,
+          display: "flex", flexDirection: "column",
+          background: "#F5F4EF",
+          borderRight: "1px solid #E8E5DC",
+          height: "100%",
+        }}>
+          {/* Header */}
+          <div style={{ padding: "24px 24px 0" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12, marginBottom: 6 }}>
+              <div style={{ fontFamily: "'Playfair Display', Georgia, serif", fontSize: 24, fontWeight: 600, color: "#1A1A1A", lineHeight: 1.2, flex: 1, minWidth: 0 }}>
+                {t.title[0]}<br />{t.title[1]}
+              </div>
+              <div style={{ display: "flex", background: "#EBE9E3", borderRadius: 8, padding: 2, flexShrink: 0 }}>
                 {["de", "en"].map(l => (
-                  <button
-                    key={l}
-                    onClick={() => setLang(l)}
-                    style={{
-                      padding: "5px 10px", borderRadius: 6,
-                      fontSize: 11, fontWeight: 700, letterSpacing: 0.5,
-                      border: "none", cursor: "pointer", transition: "all 0.15s",
-                      background: lang === l ? "white" : "transparent",
-                      color: lang === l ? "#1A1A1A" : "#AAA",
-                      boxShadow: lang === l ? "0 1px 3px rgba(0,0,0,0.1)" : "none",
-                      textTransform: "uppercase",
-                    }}
-                  >
-                    {l}
-                  </button>
+                  <button key={l} onClick={() => setLang(l)} style={{
+                    padding: "5px 10px", borderRadius: 6, fontSize: 11, fontWeight: 700, letterSpacing: 0.5,
+                    border: "none", cursor: "pointer", transition: "all 0.15s",
+                    background: lang === l ? "white" : "transparent",
+                    color: lang === l ? "#1A1A1A" : "#AAA",
+                    boxShadow: lang === l ? "0 1px 3px rgba(0,0,0,0.1)" : "none",
+                    textTransform: "uppercase",
+                  }}>{l}</button>
                 ))}
               </div>
-              {isMobile && (
-                <button
-                  onClick={() => setShowPanel(false)}
-                  style={{
-                    padding: "6px 14px", borderRadius: 100, border: "1px solid #E0DDCF",
-                    background: "white", cursor: "pointer", fontSize: 11,
-                    fontWeight: 600, color: "#888", letterSpacing: 0.3,
-                  }}
-                >
-                  ✕ Close
-                </button>
-              )}
             </div>
-          </div>
-          <div style={{ fontSize: 12, color: "#AAA", lineHeight: 1.5, marginBottom: 20 }}>
-            {t.subtitle(SPOTS.length)}
-          </div>
-
-          {/* Tabs */}
-          <div style={{
-            display: "flex", background: "#EBE9E3", borderRadius: 100,
-            padding: 3, marginBottom: 20,
-          }}>
-            {[
-              { key: "all", label: t.tabAll(SPOTS.length) },
-              { key: "gems", label: t.tabGems(gemCount) },
-            ].map(tab => (
-              <button
-                key={tab.key}
-                onClick={() => setActiveTab(tab.key)}
-                style={{
-                  flex: 1, padding: "8px 10px", borderRadius: 100,
-                  fontSize: 11, fontWeight: 600, letterSpacing: 0.5,
+            <div style={{ fontSize: 12, color: "#AAA", lineHeight: 1.5, marginBottom: 20 }}>{t.subtitle(SPOTS.length)}</div>
+            <div style={{ display: "flex", background: "#EBE9E3", borderRadius: 100, padding: 3, marginBottom: 20 }}>
+              {[{ key: "all", label: t.tabAll(SPOTS.length) }, { key: "gems", label: t.tabGems(gemCount) }].map(tab => (
+                <button key={tab.key} onClick={() => setActiveTab(tab.key)} style={{
+                  flex: 1, padding: "8px 10px", borderRadius: 100, fontSize: 11, fontWeight: 600, letterSpacing: 0.5,
                   border: "none", cursor: "pointer", transition: "all 0.15s",
                   background: activeTab === tab.key ? "#1A1A1A" : "transparent",
                   color: activeTab === tab.key ? "white" : "#999",
-                }}
-              >
-                {tab.label}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Filters */}
-        <div style={{ padding: "0 24px 16px", borderBottom: "1px solid #E8E5DC" }}>
-          <div style={{ fontSize: 10, fontWeight: 700, color: "#BBB", letterSpacing: 1.2, textTransform: "uppercase", marginBottom: 8 }}>
-            {t.filterBloom}
-          </div>
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 5, marginBottom: 14 }}>
-            {[
-              { key: "all",     label: t.all },
-              { key: "peak",    label: t.peak },
-              { key: "partial", label: t.partial },
-              { key: "budding", label: t.budding },
-            ].map(({ key, label }) => (
-              <button
-                key={key}
-                className={`filter-chip ${filterStatus === key ? "active" : ""}`}
-                onClick={() => setFilterStatus(key)}
-              >
-                {key !== "all" && (
-                  <span style={{
-                    width: 6, height: 6, borderRadius: "50%", flexShrink: 0,
-                    background: filterStatus === key ? "rgba(255,255,255,0.6)" : STATUS_CONFIG[key].color,
-                  }} />
-                )}
-                {label}
-              </button>
-            ))}
-          </div>
-
-          <div style={{ fontSize: 10, fontWeight: 700, color: "#BBB", letterSpacing: 1.2, textTransform: "uppercase", marginBottom: 8 }}>
-            {t.filterRegion}
-          </div>
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 5 }}>
-            <button
-              className={`filter-chip ${filterState === "all" ? "active" : ""}`}
-              onClick={() => setFilterState("all")}
-            >
-              {t.all}
-            </button>
-            {STATES.map(st => (
-              <button
-                key={st}
-                className={`filter-chip ${filterState === st ? "active" : ""}`}
-                onClick={() => setFilterState(st)}
-              >
-                {st.toUpperCase()}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Search + count */}
-        <div style={{ padding: "12px 24px", borderBottom: "1px solid #E8E5DC" }}>
-          <div style={{ position: "relative" }}>
-            <input
-              type="text"
-              placeholder={t.searchPlaceholder}
-              value={search}
-              onChange={e => setSearch(e.target.value)}
-              style={{
-                width: "100%", boxSizing: "border-box",
-                padding: "9px 14px 9px 32px",
-                borderRadius: 100, border: "1px solid #E0DDCF",
-                background: "white", fontSize: 12, outline: "none",
-                color: "#1A1A1A", transition: "border-color 0.15s",
-              }}
-              onFocus={e => e.target.style.borderColor = "#AAA"}
-              onBlur={e => e.target.style.borderColor = "#E0DDCF"}
-            />
-            <span style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", fontSize: 13, color: "#C0BDB5" }}>
-              ⌕
-            </span>
-          </div>
-          <div style={{ fontSize: 11, color: "#C0BDB5", marginTop: 6 }}>
-            {t.spotCount(filtered.length)}
-          </div>
-        </div>
-
-        {/* Spot list */}
-        <div style={{ flex: 1, overflowY: "auto", padding: "12px 24px 24px" }}>
-          {filtered.length === 0 ? (
-            <div style={{ textAlign: "center", padding: "48px 0", color: "#C0BDB5" }}>
-              <div style={{ fontSize: 28, marginBottom: 8 }}>🌸</div>
-              <div style={{ fontSize: 13 }}>{t.noResults}</div>
-            </div>
-          ) : (
-            <div style={{ display: "flex", flexDirection: "column", gap: 7 }}>
-              {filtered.map(spot => (
-                <div key={spot.id} className="spot-card-item" onClick={() => toggleSpot(spot)}>
-                  <SpotCard
-                    spot={spot}
-                    isSelected={selectedSpot?.id === spot.id}
-                    lang={lang}
-                  />
-                </div>
+                }}>{tab.label}</button>
               ))}
             </div>
-          )}
-        </div>
-      </div>
-      )} {/* end showPanel */}
+          </div>
 
-      {/* MAP */}
-      <div style={{ flex: 1, position: "relative", height: isMobile ? "100vh" : "100%" }}>
-        <BlossomMap
-          spots={SPOTS}
-          selectedSpot={selectedSpot}
-          onSelectSpot={toggleSpot}
-        />
-        <MusicPlayer />
+          {/* Filters */}
+          <div style={{ padding: "0 24px 16px", borderBottom: "1px solid #E8E5DC" }}>
+            <div style={{ fontSize: 10, fontWeight: 700, color: "#BBB", letterSpacing: 1.2, textTransform: "uppercase", marginBottom: 8 }}>{t.filterBloom}</div>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 5, marginBottom: 14 }}>
+              {[{ key: "all", label: t.all }, { key: "peak", label: t.peak }, { key: "partial", label: t.partial }, { key: "budding", label: t.budding }].map(({ key, label }) => (
+                <button key={key} className={`filter-chip ${filterStatus === key ? "active" : ""}`} onClick={() => setFilterStatus(key)}>
+                  {key !== "all" && <span style={{ width: 6, height: 6, borderRadius: "50%", flexShrink: 0, background: filterStatus === key ? "rgba(255,255,255,0.6)" : STATUS_CONFIG[key].color }} />}
+                  {label}
+                </button>
+              ))}
+            </div>
+            <div style={{ fontSize: 10, fontWeight: 700, color: "#BBB", letterSpacing: 1.2, textTransform: "uppercase", marginBottom: 8 }}>{t.filterRegion}</div>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 5 }}>
+              <button className={`filter-chip ${filterState === "all" ? "active" : ""}`} onClick={() => setFilterState("all")}>{t.all}</button>
+              {STATES.map(st => (
+                <button key={st} className={`filter-chip ${filterState === st ? "active" : ""}`} onClick={() => setFilterState(st)}>{st.toUpperCase()}</button>
+              ))}
+            </div>
+          </div>
+
+          {/* Search */}
+          <div style={{ padding: "12px 24px", borderBottom: "1px solid #E8E5DC" }}>
+            <div style={{ position: "relative" }}>
+              <input type="text" placeholder={t.searchPlaceholder} value={search} onChange={e => setSearch(e.target.value)}
+                style={{ width: "100%", boxSizing: "border-box", padding: "9px 14px 9px 32px", borderRadius: 100, border: "1px solid #E0DDCF", background: "white", fontSize: 12, outline: "none", color: "#1A1A1A", transition: "border-color 0.15s" }}
+                onFocus={e => e.target.style.borderColor = "#AAA"} onBlur={e => e.target.style.borderColor = "#E0DDCF"} />
+              <span style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", fontSize: 13, color: "#C0BDB5" }}>⌕</span>
+            </div>
+            <div style={{ fontSize: 11, color: "#C0BDB5", marginTop: 6 }}>{t.spotCount(filtered.length)}</div>
+          </div>
+
+          {/* List */}
+          <div style={{ flex: 1, overflowY: "auto", padding: "12px 24px 24px" }}>
+            {filtered.length === 0 ? (
+              <div style={{ textAlign: "center", padding: "48px 0", color: "#C0BDB5" }}>
+                <div style={{ fontSize: 28, marginBottom: 8 }}>🌸</div>
+                <div style={{ fontSize: 13 }}>{t.noResults}</div>
+              </div>
+            ) : (
+              <div style={{ display: "flex", flexDirection: "column", gap: 7 }}>
+                {filtered.map(spot => (
+                  <div key={spot.id} className="spot-card-item" onClick={() => toggleSpot(spot)}>
+                    <SpotCard spot={spot} isSelected={selectedSpot?.id === spot.id} lang={lang} />
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* ── MAP (always full area) ── */}
+      <div style={{ flex: 1, position: "relative", height: "100%" }}>
+        <BlossomMap spots={SPOTS} selectedSpot={selectedSpot} onSelectSpot={toggleSpot} />
+        {!isMobile && <MusicPlayer />}
         {petalId !== null && <FallingPetals key={petalId} />}
-        {/* Show Spots FAB on mobile when panel is hidden */}
-        {isMobile && !showPanel && !selectedSpot && (
-          <button
-            onClick={() => setShowPanel(true)}
-            style={{
-              position: "absolute", bottom: 32, left: "50%", transform: "translateX(-50%)",
-              zIndex: 850, background: "#1A1A1A", color: "white",
-              border: "none", borderRadius: 100, padding: "13px 26px",
-              fontSize: 13, fontWeight: 600, cursor: "pointer",
-              boxShadow: "0 4px 20px rgba(0,0,0,0.28)", whiteSpace: "nowrap",
-            }}
-          >
-            🌸 {t.showSpots}
-          </button>
-        )}
         {selectedSpot && (
-          <SpotDetail spot={selectedSpot} lang={lang} onClose={() => setSelectedSpot(null)} isMobile={isMobile} />
+          <SpotDetail spot={selectedSpot} lang={lang} onClose={() => { setSelectedSpot(null); setPetalId(null); }} isMobile={isMobile} />
         )}
       </div>
+
+      {/* ── MOBILE: Apple Maps-style bottom sheet ── */}
+      {isMobile && (
+        <div style={{
+          position: "fixed", bottom: 0, left: 0, right: 0,
+          zIndex: 1100,
+          background: "#F5F4EF",
+          borderRadius: "22px 22px 0 0",
+          boxShadow: "0 -4px 32px rgba(0,0,0,0.14)",
+          height: sheetSnap === "full" ? "88vh" : "240px",
+          transition: "height 0.32s cubic-bezier(0.32, 0.72, 0, 1)",
+          display: "flex", flexDirection: "column",
+          overflow: "hidden",
+        }}>
+
+          {/* Drag handle — tapping toggles peek ↔ full */}
+          <div
+            onClick={() => setSheetSnap(s => s === "peek" ? "full" : "peek")}
+            style={{ padding: "12px 0 6px", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}
+          >
+            <div style={{ width: 38, height: 4, borderRadius: 2, background: "#D0CDC6" }} />
+          </div>
+
+          {/* Music player card — inline, full width */}
+          <MusicPlayer inline />
+
+          {/* Scrollable content */}
+          <div style={{ flex: 1, overflowY: "auto" }}>
+
+            {/* Title row + lang toggle */}
+            <div style={{ padding: "10px 20px 0", display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
+              <div style={{ fontFamily: "'Playfair Display', Georgia, serif", fontSize: 20, fontWeight: 600, color: "#1A1A1A", lineHeight: 1.2 }}>
+                {t.title[0]} {t.title[1]}
+              </div>
+              <div style={{ display: "flex", background: "#EBE9E3", borderRadius: 8, padding: 2, flexShrink: 0 }}>
+                {["de", "en"].map(l => (
+                  <button key={l} onClick={() => setLang(l)} style={{
+                    padding: "5px 10px", borderRadius: 6, fontSize: 11, fontWeight: 700, letterSpacing: 0.5,
+                    border: "none", cursor: "pointer", transition: "all 0.15s",
+                    background: lang === l ? "white" : "transparent",
+                    color: lang === l ? "#1A1A1A" : "#AAA",
+                    boxShadow: lang === l ? "0 1px 3px rgba(0,0,0,0.1)" : "none",
+                    textTransform: "uppercase",
+                  }}>{l}</button>
+                ))}
+              </div>
+            </div>
+            <div style={{ fontSize: 11, color: "#AAA", padding: "0 20px 12px" }}>{t.subtitle(SPOTS.length)}</div>
+
+            {/* Tabs */}
+            <div style={{ padding: "0 20px", marginBottom: 14 }}>
+              <div style={{ display: "flex", background: "#EBE9E3", borderRadius: 100, padding: 3 }}>
+                {[{ key: "all", label: t.tabAll(SPOTS.length) }, { key: "gems", label: t.tabGems(gemCount) }].map(tab => (
+                  <button key={tab.key} onClick={() => setActiveTab(tab.key)} style={{
+                    flex: 1, padding: "8px 10px", borderRadius: 100, fontSize: 11, fontWeight: 600, letterSpacing: 0.5,
+                    border: "none", cursor: "pointer", transition: "all 0.15s",
+                    background: activeTab === tab.key ? "#1A1A1A" : "transparent",
+                    color: activeTab === tab.key ? "white" : "#999",
+                  }}>{tab.label}</button>
+                ))}
+              </div>
+            </div>
+
+            {/* Filters */}
+            <div style={{ padding: "0 20px 14px", borderBottom: "1px solid #E8E5DC" }}>
+              <div style={{ fontSize: 10, fontWeight: 700, color: "#BBB", letterSpacing: 1.2, textTransform: "uppercase", marginBottom: 8 }}>{t.filterBloom}</div>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 5, marginBottom: 12 }}>
+                {[{ key: "all", label: t.all }, { key: "peak", label: t.peak }, { key: "partial", label: t.partial }, { key: "budding", label: t.budding }].map(({ key, label }) => (
+                  <button key={key} className={`filter-chip ${filterStatus === key ? "active" : ""}`} onClick={() => setFilterStatus(key)}>
+                    {key !== "all" && <span style={{ width: 6, height: 6, borderRadius: "50%", flexShrink: 0, background: filterStatus === key ? "rgba(255,255,255,0.6)" : STATUS_CONFIG[key].color }} />}
+                    {label}
+                  </button>
+                ))}
+              </div>
+              <div style={{ fontSize: 10, fontWeight: 700, color: "#BBB", letterSpacing: 1.2, textTransform: "uppercase", marginBottom: 8 }}>{t.filterRegion}</div>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 5 }}>
+                <button className={`filter-chip ${filterState === "all" ? "active" : ""}`} onClick={() => setFilterState("all")}>{t.all}</button>
+                {STATES.map(st => (
+                  <button key={st} className={`filter-chip ${filterState === st ? "active" : ""}`} onClick={() => setFilterState(st)}>{st.toUpperCase()}</button>
+                ))}
+              </div>
+            </div>
+
+            {/* Search */}
+            <div style={{ padding: "12px 20px 8px" }}>
+              <div style={{ position: "relative" }}>
+                <input type="text" placeholder={t.searchPlaceholder} value={search} onChange={e => setSearch(e.target.value)}
+                  style={{ width: "100%", boxSizing: "border-box", padding: "9px 14px 9px 32px", borderRadius: 100, border: "1px solid #E0DDCF", background: "white", fontSize: 12, outline: "none", color: "#1A1A1A" }}
+                  onFocus={e => e.target.style.borderColor = "#AAA"} onBlur={e => e.target.style.borderColor = "#E0DDCF"} />
+                <span style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", fontSize: 13, color: "#C0BDB5" }}>⌕</span>
+              </div>
+              <div style={{ fontSize: 11, color: "#C0BDB5", marginTop: 5 }}>{t.spotCount(filtered.length)}</div>
+            </div>
+
+            {/* Spot list */}
+            <div style={{ padding: "4px 20px 120px" }}>
+              {filtered.length === 0 ? (
+                <div style={{ textAlign: "center", padding: "40px 0", color: "#C0BDB5" }}>
+                  <div style={{ fontSize: 28, marginBottom: 8 }}>🌸</div>
+                  <div style={{ fontSize: 13 }}>{t.noResults}</div>
+                </div>
+              ) : (
+                <div style={{ display: "flex", flexDirection: "column", gap: 7 }}>
+                  {filtered.map(spot => (
+                    <div key={spot.id} className="spot-card-item" onClick={() => toggleSpot(spot)}>
+                      <SpotCard spot={spot} isSelected={selectedSpot?.id === spot.id} lang={lang} />
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
