@@ -4,7 +4,7 @@ An interactive cherry blossom map of Germany. Find peak bloom spots, hidden gems
 
 ## What it does
 
-- **88 cherry blossom locations** across all 16 German states, from Bonn's iconic Heerstraße to hidden residential alleys in Aachen
+- **87 cherry blossom locations** across all 16 German states, from Bonn's iconic Heerstraße to hidden residential alleys in Aachen
 - **Interactive Leaflet map** with Germany highlighted in blossom pink, colored dot markers by bloom status, and fly-to animation on selection
 - **Side panel** with live search, bloom status filters (Peak / Partial / Budding), region filters, and a Hidden Gems tab
 - **Spot detail overlay** with full description, crowd level, transit info, tags, and a Get Directions link to Google Maps
@@ -20,6 +20,7 @@ An interactive cherry blossom map of Germany. Find peak bloom spots, hidden gems
 - [Germany GeoJSON](https://github.com/isellsoap/deutschlandGeoJSON) for the country border overlay
 - [DM Sans](https://fonts.google.com/specimen/DM+Sans) + [Playfair Display](https://fonts.google.com/specimen/Playfair+Display) via Google Fonts
 - Canvas API for the falling petal animation
+- YouTube IFrame API for ambient music streaming
 - No CSS framework — all styling is inline or minimal global CSS
 
 ## Getting started
