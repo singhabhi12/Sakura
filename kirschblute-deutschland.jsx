@@ -419,6 +419,7 @@ const T = {
     crowds: "crowds",
     gem: "Gem",
     directions: "Get Directions",
+    showSpots: "Show Spots",
   },
   de: {
     title: ["Kirschblüte", "Deutschland"],
@@ -438,6 +439,7 @@ const T = {
     crowds: "Besucher",
     gem: "Geheimtipp",
     directions: "Route berechnen",
+    showSpots: "Spots anzeigen",
   },
 };
 
@@ -561,17 +563,23 @@ function SpotCard({ spot, isSelected, lang, onClick }) {
 }
 
 // Selected spot detail overlay on the map
-function SpotDetail({ spot, lang, onClose }) {
+function SpotDetail({ spot, lang, onClose, isMobile }) {
   const sc = STATUS_CONFIG[spot.status];
   const crowd = CROWD_CONFIG[spot.crowd];
   const t = T[lang];
   return (
     <div style={{
-      position: "absolute", bottom: 24, left: 24, right: 24, zIndex: 1000,
-      background: "white", borderRadius: 16, padding: "20px 22px",
-      boxShadow: "0 8px 40px rgba(0,0,0,0.12)",
+      position: isMobile ? "fixed" : "absolute",
+      bottom: 0, left: isMobile ? 0 : 24, right: isMobile ? 0 : 24,
+      zIndex: 1200,
+      background: "white",
+      borderRadius: isMobile ? "16px 16px 0 0" : 16,
+      padding: isMobile ? "20px 20px 36px" : "20px 22px",
+      boxShadow: "0 -4px 40px rgba(0,0,0,0.12)",
       border: "1px solid #E8E5DC",
       animation: "slideUp 0.2s ease-out",
+      maxHeight: isMobile ? "70vh" : "none",
+      overflowY: isMobile ? "auto" : "visible",
     }}>
       <div>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12 }}>
@@ -645,7 +653,7 @@ function MusicPlayer() {
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [volume, setVolume] = useState(18);
-  const [isCollapsed, setIsCollapsed] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(() => window.innerWidth < 768);
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
@@ -727,8 +735,10 @@ function MusicPlayer() {
 
   return (
     <div style={{
-      position: "absolute", top: 20, right: 20, zIndex: 900,
-      width: 310, borderRadius: 16,
+      position: "absolute", top: 16, right: 16, zIndex: 900,
+      width: window.innerWidth < 768 ? "calc(100% - 32px)" : 310,
+      maxWidth: 310,
+      borderRadius: 16,
       background: "#F5F4EF", border: "1px solid #E8E5DC",
       boxShadow: "0 4px 28px rgba(0,0,0,0.10)",
       fontFamily: "'DM Sans', sans-serif",
@@ -942,6 +952,18 @@ export default function KirschbluteDeutschland() {
   const [filterState, setFilterState] = useState("all");
   const [activeTab, setActiveTab] = useState("all");
   const [search, setSearch] = useState("");
+  const [isMobile, setIsMobile] = useState(() => window.innerWidth < 768);
+  const [showPanel, setShowPanel] = useState(() => window.innerWidth >= 768);
+
+  useEffect(() => {
+    const onResize = () => {
+      const mobile = window.innerWidth < 768;
+      setIsMobile(mobile);
+      if (!mobile) setShowPanel(true);
+    };
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, []);
 
   const t = T[lang];
 
@@ -962,6 +984,7 @@ export default function KirschbluteDeutschland() {
   const gemCount = SPOTS.filter(s => s.gem).length;
 
   function toggleSpot(spot) {
+    const mobile = window.innerWidth < 768;
     setSelectedSpot(prev => {
       const isDeselecting = prev?.id === spot.id;
       if (!isDeselecting && spot.status === "peak") {
@@ -971,6 +994,7 @@ export default function KirschbluteDeutschland() {
       }
       return isDeselecting ? null : spot;
     });
+    if (mobile) setShowPanel(false);
   }
 
   return (
@@ -1000,17 +1024,30 @@ export default function KirschbluteDeutschland() {
         }
         .filter-chip:hover { border-color: #B0ADA5; }
         .filter-chip.active { background: #1A1A1A; border-color: #1A1A1A; color: white; }
+        @keyframes slideUpPanel {
+          from { transform: translateY(100%); }
+          to   { transform: translateY(0); }
+        }
+        @media (max-width: 767px) {
+          .leaflet-control-zoom { bottom: 90px !important; right: 12px !important; }
+        }
       `}</style>
 
       {/* LEFT PANEL */}
+      {(showPanel) && (
       <div style={{
-        width: 370,
+        width: isMobile ? "100%" : 370,
         flexShrink: 0,
         display: "flex",
         flexDirection: "column",
         background: "#F5F4EF",
-        borderRight: "1px solid #E8E5DC",
+        borderRight: isMobile ? "none" : "1px solid #E8E5DC",
         height: "100%",
+        ...(isMobile ? {
+          position: "fixed", top: 0, left: 0, right: 0, bottom: 0,
+          zIndex: 1100,
+          animation: "slideUpPanel 0.28s ease-out",
+        } : {}),
       }}>
 
         {/* Header */}
@@ -1025,9 +1062,16 @@ export default function KirschbluteDeutschland() {
             {t.subtitle(SPOTS.length)}
           </div>
 
-          {/* Language toggle */}
+          {/* Top-right controls: lang toggle + mobile close */}
+          <div style={{ position: "absolute", top: 28, right: 24, display: "flex", alignItems: "center", gap: 8 }}>
+          {isMobile && (
+            <button onClick={() => setShowPanel(false)} style={{
+              width: 28, height: 28, borderRadius: "50%", border: "1px solid #E0DDCF",
+              background: "white", cursor: "pointer", fontSize: 14, color: "#888",
+              display: "flex", alignItems: "center", justifyContent: "center",
+            }}>✕</button>
+          )}
           <div style={{
-            position: "absolute", top: 28, right: 24,
             display: "flex", background: "#EBE9E3", borderRadius: 8, padding: 2,
           }}>
             {["de", "en"].map(l => (
@@ -1048,6 +1092,7 @@ export default function KirschbluteDeutschland() {
               </button>
             ))}
           </div>
+          </div>{/* end top-right controls */}
 
           {/* Tabs */}
           <div style={{
@@ -1174,9 +1219,10 @@ export default function KirschbluteDeutschland() {
           )}
         </div>
       </div>
+      )} {/* end showPanel */}
 
       {/* MAP */}
-      <div style={{ flex: 1, position: "relative" }}>
+      <div style={{ flex: 1, position: "relative", height: isMobile ? "100vh" : "100%" }}>
         <BlossomMap
           spots={SPOTS}
           selectedSpot={selectedSpot}
@@ -1184,8 +1230,23 @@ export default function KirschbluteDeutschland() {
         />
         <MusicPlayer />
         {petalId !== null && <FallingPetals key={petalId} />}
+        {/* Show Spots FAB on mobile when panel is hidden */}
+        {isMobile && !showPanel && !selectedSpot && (
+          <button
+            onClick={() => setShowPanel(true)}
+            style={{
+              position: "absolute", bottom: 32, left: "50%", transform: "translateX(-50%)",
+              zIndex: 850, background: "#1A1A1A", color: "white",
+              border: "none", borderRadius: 100, padding: "13px 26px",
+              fontSize: 13, fontWeight: 600, cursor: "pointer",
+              boxShadow: "0 4px 20px rgba(0,0,0,0.28)", whiteSpace: "nowrap",
+            }}
+          >
+            🌸 {t.showSpots}
+          </button>
+        )}
         {selectedSpot && (
-          <SpotDetail spot={selectedSpot} lang={lang} onClose={() => setSelectedSpot(null)} />
+          <SpotDetail spot={selectedSpot} lang={lang} onClose={() => setSelectedSpot(null)} isMobile={isMobile} />
         )}
       </div>
     </div>
